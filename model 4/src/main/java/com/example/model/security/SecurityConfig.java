@@ -25,6 +25,8 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                                 authorizeRequests
                                         .antMatchers("/", "/signup", "/login").permitAll()
                                         .antMatchers("/h2-console/**").permitAll()
+                                        .antMatchers("/user/**").hasRole("USER")
+                                        .antMatchers("/admin/**").hasRole("ADMIN")
                                         .anyRequest().authenticated()
                                         .and()
                                         .headers()
@@ -44,7 +46,8 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 .formLogin(formLogin ->
                         formLogin
                                 .loginPage("/login")
-                                .defaultSuccessUrl("/welcome")
+                                .defaultSuccessUrl("/user/dashboard")  // User dashboard after login
+
                                 .permitAll()
                 )
                 .logout(logout ->
