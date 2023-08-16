@@ -1,9 +1,13 @@
 
 
+
+
 package com.example.model.controller;
 
 
+import com.example.model.repository.RoleRepository;
 import com.example.model.repository.UserRepository;
+import com.example.model.veri.Role;
 import com.example.model.veri.User;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -13,11 +17,19 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
+import java.security.Principal;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
 @Controller
 public class UserController {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final Logger logger = LoggerFactory.getLogger(UserController.class);
+
+    @Autowired
+    private RoleRepository RoleRepository;
 
     @Autowired
     public UserController(UserRepository userRepository, PasswordEncoder passwordEncoder) {
@@ -39,17 +51,21 @@ public class UserController {
     }
 
     @PostMapping("/signup")
-    public String addUser(@ModelAttribute User user,Model model) {
+    public String addUser(@ModelAttribute User user, Model model) {
         String username = user.getUsername();
 
 
         User existingUser = userRepository.findByUsername(username);
         if (existingUser != null) {
             model.addAttribute("error", "Bu kullanıcı adı zaten kullanılıyor. Lütfen başka bir kullanıcı adı seçin.");
-            return "redirect:/signup.html"; // Kullanıcıyı kayıt formuna geri yönlendir
+            return "redirect:/signup.html";
         }
 
         user.setPassword(passwordEncoder.encode(user.getPassword()));
+        Role userRole = RoleRepository.findByName("ROLE_USER");
+        Set<Role> roles = new HashSet<>();
+        roles.add(userRole);
+        user.setRoles(roles);
         userRepository.save(user);
         logger.info("Yeni kullanıcı kaydedildi: {}", user.getUsername());
         return "redirect:/login.html";
@@ -78,11 +94,25 @@ public class UserController {
         }
     }
 
-    @GetMapping("/welcome")
+   /* @GetMapping("/welcome")
     public String showWelcomePage(Model model) {
         String username = (String) model.getAttribute("username");
         model.addAttribute("username", username);
         logger.info("Hoş geldiniz sayfası gösteriliyor");
         return "welcome.html";
+    }*/
+
+    @GetMapping("/user/dashboard")
+    public String showUserDashboard(Model model, Principal principal) {
+        String username = principal.getName();
+        model.addAttribute("username", username);
+        return "user/dashboard";
+    }
+
+    @GetMapping("/admin/userList")
+    public String showUserList(Model model) {
+        List<User> users = userRepository.findAll();
+        model.addAttribute("users", users);
+        return "admin/userList";
     }
 }
